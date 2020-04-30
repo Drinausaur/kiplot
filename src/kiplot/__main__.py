@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import pcbnew
 import os
 import sys
 
@@ -38,10 +39,13 @@ def main():
                       .format(args.plot_config))
         sys.exit(EXIT_BAD_ARGS)
 
+    board = pcbnew.LoadBoard(args.board_file)
+    logging.debug("Board loaded")
+
     cr = config_reader.CfgYamlReader()
 
     with open(args.plot_config) as cf_file:
-        cfg = cr.read(cf_file)
+        cfg = cr.read(cf_file, board)
 
     # relative to CWD (absolute path overrides)
     outdir = os.path.join(os.getcwd(), args.out_dir)

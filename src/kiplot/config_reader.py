@@ -337,55 +337,20 @@ class CfgYamlReader(CfgReader):
 
         return po
 
-    def _get_layer_from_str(self, s):
+    def _get_layer_from_str(self, s, b):
         """
         Get the pcbnew layer from a string in the config
         """
+        n = b.GetLayerID( s )
 
-        D = {
-            'F.Cu': pcbnew.F_Cu,
-            'B.Cu': pcbnew.B_Cu,
-            'F.Adhes': pcbnew.F_Adhes,
-            'B.Adhes': pcbnew.B_Adhes,
-            'F.Paste': pcbnew.F_Paste,
-            'B.Paste': pcbnew.B_Paste,
-            'F.SilkS': pcbnew.F_SilkS,
-            'B.SilkS': pcbnew.B_SilkS,
-            'F.Mask': pcbnew.F_Mask,
-            'B.Mask': pcbnew.B_Mask,
-            'Dwgs.User': pcbnew.Dwgs_User,
-            'Cmts.User': pcbnew.Cmts_User,
-            'Eco1.User': pcbnew.Eco1_User,
-            'Eco2.User': pcbnew.Eco2_User,
-            'Edge.Cuts': pcbnew.Edge_Cuts,
-            'Margin': pcbnew.Margin,
-            'F.CrtYd': pcbnew.F_CrtYd,
-            'B.CrtYd': pcbnew.B_CrtYd,
-            'F.Fab': pcbnew.F_Fab,
-            'B.Fab': pcbnew.B_Fab,
-        }
-
-        layer = None
-
-        if s in D:
-            layer = PC.LayerInfo(D[s], False)
-        elif s.startswith("Inner"):
-            m = re.match(r"^Inner\.([0-9]+)$", s)
-
-            if not m:
-                raise YamlError("Malformed inner layer name: {}"
-                                .format(s))
-
-            layer = PC.LayerInfo(int(m.group(1)), True)
-        else:
+        if n == -1:
             raise YamlError("Unknown layer name: {}".format(s))
+        return n
 
-        return layer
-
-    def _parse_layer(self, l_obj):
+    def _parse_layer(self, l_obj, b):
 
         l_str = self._get_required(l_obj, 'layer')
-        layer_id = self._get_layer_from_str(l_str)
+        layer_id = self._get_layer_from_str(l_str, b)
         layer = PC.LayerConfig(layer_id)
 
         layer.desc = l_obj['description'] if 'description' in l_obj else None
@@ -393,7 +358,7 @@ class CfgYamlReader(CfgReader):
 
         return layer
 
-    def _parse_output(self, o_obj):
+    def _parse_output(self, o_obj, b):
 
         try:
             name = o_obj['name']
@@ -434,7 +399,7 @@ class CfgYamlReader(CfgReader):
             layers = []
 
         for l in layers:
-            o_cfg.layers.append(self._parse_layer(l))
+            o_cfg.layers.append(self._parse_layer(l, b))
 
         return o_cfg
 
@@ -448,11 +413,12 @@ class CfgYamlReader(CfgReader):
         if 'run_drc' in pf:
             cfg.run_drc = pf['run_drc']
 
-    def read(self, fstream):
+    def read(self, fstream, b):
         """
         Read a file object into a config object
 
         :param fstream: file stream of a config YAML file
+        :param b: board object
         """
 
         try:
@@ -470,7 +436,7 @@ class CfgYamlReader(CfgReader):
 
         for o in data['outputs']:
 
-            op_cfg = self._parse_output(o)
+            op_cfg = self._parse_output(o, b)
             cfg.add_output(op_cfg)
 
         return cfg

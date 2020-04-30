@@ -121,32 +121,23 @@ class Plotter(object):
             layer = l.layer
             suffix = l.suffix
             desc = l.desc
-
-            # for inner layers, we can now check if the layer exists
-            if layer.is_inner:
-
-                if layer.layer < 1 or layer.layer >= layer_cnt - 1:
-                    raise PlotError(
-                        "Inner layer {} is not valid for this board"
-                        .format(layer.layer))
-
             # Set current layer
-            plot_ctrl.SetLayer(layer.layer)
+            plot_ctrl.SetLayer(layer)
 
             # Skipping NPTH is controlled by whether or not this is
             # a copper layer
-            is_cu = pcbnew.IsCopperLayer(layer.layer)
+            is_cu = pcbnew.IsCopperLayer(layer)
             po.SetSkipPlotNPTH_Pads(is_cu)
 
             plot_format = self._get_layer_plot_format(output)
 
             # Plot single layer to file
             logging.debug("Opening plot file for layer {} ({})"
-                          .format(layer.layer, suffix))
+                          .format(layer, suffix))
             plot_ctrl.OpenPlotfile(suffix, plot_format, desc)
 
             logging.debug("Plotting layer {} to {}".format(
-                layer.layer, plot_ctrl.GetPlotFileName()))
+                layer, plot_ctrl.GetPlotFileName()))
             plot_ctrl.PlotLayer()
 
     def _configure_excellon_drill_writer(self, board, offset, options):
